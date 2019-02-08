@@ -25,28 +25,24 @@ class Player
     @cards.each { |card| card.type = :open }
   end
 
-  def sum_score
+  def score
     sum ||= 0
     @cards.each do |card|
-      if card.score.is_a?(Array)
-        if sum + 11 > 21
-          sum += card.score[0]
-        else
-          sum += card.score[1]
-        end
+      if card.ace?
+        sum + card.point > 21 ? sum += 1 : sum += card.point
       else
-        sum += card.score
+        sum += card.point
       end
     end
     sum
   end
 
-  def get_prize(bet)
-    @bank += bet * 2
+  def full_hand?
+    @cards.size == 3
   end
 
-  def get_bet(bet)
-    @bank += bet
+  def get_prize(amount)
+    @bank += amount
   end
 
   def lose_bet(bet)
