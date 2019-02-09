@@ -1,4 +1,7 @@
 class GameInterface
+  INTRO = 'Игра \"Black Jack\"\n'
+  ENTER_NAME = 'Для начала введите свое имя'
+  ANONIM = 'Аноним'
   DEALER = 'Крупье '
   USER = 'Игрок '
   SHIRT = '* '
@@ -26,21 +29,24 @@ class GameInterface
     'Открыть карты'
     ].freeze
 
-  def initialize(bank, deck, dealer, user)
-    @bank = bank
-    @deck = deck
-    @dealer = dealer
-    @user = user
+  attr_reader :user_name
+
+  def initialize
+    @user_name = create_name
   end
 
   def create_name
-
+    puts INTRO
+    puts ENTER_NAME
+    name = gets.chomp
+    name = ANONIM if name.to_s.empty?
+    name
   end
 
-  def dealer_cards
-    puts DEALER + "(#{@dealer.bank} $)"
+  def dealer_cards(dealer)
+    puts DEALER + "(#{dealer.bank} $)"
 
-    @dealer.cards.each do |card|
+    dealer.hand.cards.each do |card|
       if card.type == :closed
         print SHIRT
       else
@@ -51,19 +57,19 @@ class GameInterface
     puts
   end
 
-  def user_cards
-    puts USER + "#{@user.name} (#{@user.bank} $)"
+  def user_cards(user)
+    puts USER + "#{user.name} (#{user.bank} $)"
 
-    @user.cards.each do |card|
+    user.hand.cards.each do |card|
       print card.rank + card.suit + COMMA
     end
-    puts SUM_SCORES + "#{@user.score}"
+    puts SUM_SCORES + "#{user.hand.score}"
     puts
   end
 
-  def bet
-    @bank.bet(@user, @dealer)
-    puts BETS + "#{@bank.amount} $"
+  def bet(bank, user, dealer)
+    bank.bet(user, dealer)
+    puts BETS + "#{bank.amount} $"
     puts
   end
 
@@ -72,8 +78,8 @@ class GameInterface
     input = select_choice(ACTIONS)
   end
 
-  def dealer_action
-    if @dealer.score >= 17
+  def dealer_action(dealer)
+    if dealer.hand.score >= 17
       puts DEALER_ACTIONS[0]
       input = 0
     else
@@ -89,12 +95,13 @@ class GameInterface
     input = select_choice(USER_CHOICES)
   end
 
-  def judge_info
+  def open_cards_info(dealer)
     puts DEALER_ACTIONS[2]
+    dealer.open_cards
+    dealer_cards(dealer)
     delay
-    @dealer.open_cards
-    dealer_cards
-    puts DEALER_SCORES + "#{@dealer.score}"
+    puts DEALER_SCORES + "#{dealer.hand.score}"
+    delay
   end
 
   def lose_info
@@ -118,7 +125,6 @@ class GameInterface
     array.each.with_index(1) do |action, index|
       puts "#{index}. #{action}"
     end
-
     input = gets.to_i
     input = gets.to_i until input.between?(1, array.size)
     input

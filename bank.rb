@@ -16,4 +16,17 @@ class Bank
   def zero?(player)
     player.bank < BET
   end
+
+  def win(user)
+    user.get_prize(@amount)
+  end
+
+  def lose(dealer)
+    dealer.get_prize(@amount)
+  end
+
+  def draw(user, dealer)
+    dealer.get_prize(@amount / 2)
+    user.get_prize(@amount / 2)
+  end
 end

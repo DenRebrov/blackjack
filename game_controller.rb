@@ -4,18 +4,19 @@ require_relative 'deck.rb'
 require_relative 'player.rb'
 require_relative 'dealer.rb'
 require_relative 'user.rb'
+require_relative 'hand.rb'
 require_relative 'game_interface.rb'
 
 class GameController
   attr_reader :bank, :deck, :dealer, :user, :interface
   attr_accessor :status
 
-  def initialize(user)
+  def initialize
     @deck = Deck.new
     @dealer = Dealer.new
     @bank = Bank.new
-    @user = user
-    @interface = GameInterface.new(@bank, @deck, @dealer, @user)
+    @interface = GameInterface.new
+    @user = User.new(@interface.user_name.capitalize)
     @status = :in_progress
   end
 
@@ -49,14 +50,14 @@ class GameController
 
   def initial_interface
     if @user.bank > 10 && @dealer.bank > 10
-      @interface.bet
+      @interface.bet(@bank, @user, @dealer)
     else
-      @interface.judge_info
-      judge
+      @interface.open_cards_info(@dealer)
+      define_winner
     end
 
-    @interface.dealer_cards
-    @interface.user_cards
+    @interface.dealer_cards(@dealer)
+    @interface.user_cards(@user)
   end
 
   def user_turn
@@ -64,28 +65,28 @@ class GameController
 
     case input
     when 2
-      unless @user.full_hand?
+      unless @user.hand.full?
         deal_cards(@user, 1)
-        @interface.user_cards
-        if @user.score > 21
+        @interface.user_cards(@user)
+        if @user.hand.score > 21
           @interface.lose_info
           @status = :judge
         end
       end
     when 3
-     @interface.judge_info
-     judge
+      @interface.open_cards_info(@dealer)
+      define_winner
     end
   end
 
   def dealer_turn
     if @status != :judge
-      input = @interface.dealer_action
+      input = @interface.dealer_action(@dealer)
 
       case input
       when 1
         deal_cards(@dealer, 1)
-        @interface.dealer_cards
+        @interface.dealer_cards(@dealer)
       end
     end
   end
@@ -100,35 +101,18 @@ class GameController
     true unless @bank.zero?(@user)
   end
 
-  def judge
-    if (@user.score > 21 && @dealer.score <= 21) ||
-       (@user.score < @dealer.score &&
-        @user.score <= 21 && @dealer.score <= 21)
-      @interface.lose_info
-      lose
-    elsif (@user.score <= 21 && @dealer.score > 21) ||
-          (@user.score > @dealer.score &&
-          @user.score <= 21 && @dealer.score <= 21)
-      @interface.win_info
-      win
-    else
-      @interface.draw_info
-      draw
-    end
+  def define_winner
     @status = :judge
-  end
+    return @interface.draw_info + @bank.draw(@user, @dealer) if @user.hand.score > 21 && @dealer.hand.score > 21
+    return @interface.draw_info + @bank.draw(@user, @dealer) if @user.hand.score == @dealer.hand.score
+    return @interface.lose_info + @bank.lose(@dealer) if @user.hand.score > 21
+    return @interface.win_info + @bank.win(@user) if @dealer.hand.score > 21
 
-  def win
-    @user.get_prize(@bank.amount)
-  end
-
-  def lose
-    @dealer.get_prize(@bank.amount)
-  end
-
-  def draw
-    @dealer.get_prize(@bank.amount / 2)
-    @user.get_prize(@bank.amount / 2)
+    if @user.hand.score > @dealer.hand.score
+      return @interface.win_info + @bank.win(@user)
+    else
+      return @interface.lose_info + @bank.lose(@dealer)
+    end
   end
 
   def refresh
@@ -147,11 +131,5 @@ class GameController
   end
 end
 
-puts 'Игра \"Black Jack\"\n'
-puts 'Введите свое имя'
-name = gets.chomp
-name = 'Аноним' if name.to_s.empty?
-user = User.new(name.capitalize)
-
-game = GameController.new(user)
+game = GameController.new
 game.run
