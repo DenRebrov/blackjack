@@ -16,11 +16,12 @@ class GameController
     @dealer = Dealer.new
     @bank = Bank.new
     @interface = GameInterface.new
-    @user = User.new(@interface.user_name.capitalize)
     @status = :in_progress
   end
 
   def run
+    @user = User.new(@interface.user_name.capitalize)
+
     while (@status != :finish) do
       if have_money?
         distribution
@@ -49,15 +50,20 @@ class GameController
   end
 
   def initial_interface
-    if @user.bank > 10 && @dealer.bank > 10
-      @interface.bet(@bank, @user, @dealer)
+    if @bank.can_make_bet?(@user) && @bank.can_make_bet?(@dealer)
+      bet
+      @interface.bet_info(@bank)
     else
       @interface.open_cards_info(@dealer)
-      define_winner
+      judge
     end
 
     @interface.dealer_cards(@dealer)
     @interface.user_cards(@user)
+  end
+
+  def bet
+    @bank.bet(@user, @dealer)
   end
 
   def user_turn
@@ -68,23 +74,23 @@ class GameController
       unless @user.hand.full?
         deal_cards(@user, 1)
         @interface.user_cards(@user)
-        if @user.hand.score > 21
+        if @user.hand.score > Hand::MAX_SCORE
           @interface.lose_info
           @status = :judge
         end
       end
     when 3
       @interface.open_cards_info(@dealer)
-      define_winner
+      judge
     end
   end
 
   def dealer_turn
     if @status != :judge
-      input = @interface.dealer_action(@dealer)
-
-      case input
-      when 1
+      if @dealer.hand.score >= 17
+        @interface.dealer_skips(@dealer)
+      else
+        @interface.dealer_takes_card(@dealer)
         deal_cards(@dealer, 1)
         @interface.dealer_cards(@dealer)
       end
@@ -102,24 +108,33 @@ class GameController
   end
 
   def define_winner
-    @status = :judge
-    return @interface.draw_info + @bank.draw(@user, @dealer) if @user.hand.score > 21 && @dealer.hand.score > 21
-    return @interface.draw_info + @bank.draw(@user, @dealer) if @user.hand.score == @dealer.hand.score
-    return @interface.lose_info + @bank.lose(@dealer) if @user.hand.score > 21
-    return @interface.win_info + @bank.win(@user) if @dealer.hand.score > 21
+    return if @user.hand.score > Hand::MAX_SCORE && @dealer.hand.score > Hand::MAX_SCORE
+    return if @user.hand.score == @dealer.hand.score
+    return Dealer if @user.hand.score > Hand::MAX_SCORE
+    return User if @dealer.hand.score > Hand::MAX_SCORE
 
-    if @user.hand.score > @dealer.hand.score
-      return @interface.win_info + @bank.win(@user)
+    [@user, @dealer].max_by { |player| player.hand.score }
+  end
+
+  def judge
+    winner = define_winner
+    @status = :judge
+    case winner
+    when User
+      @interface.win_info
+      @bank.reward_winner(@user)
+    when Dealer
+      @interface.lose_info
+      @bank.reward_winner(@dealer)
     else
-      return @interface.lose_info + @bank.lose(@dealer)
+      @interface.draw_info
+      @bank.draw(@user, @dealer)
     end
   end
 
   def refresh
-    cards = []
-    cards += @user.remove_cards
-    cards += @dealer.remove_cards
-    @deck.add_cards(cards)
+    @user.refresh_cards
+    @dealer.refresh_cards
   end
 
   def deal_cards(player, number)

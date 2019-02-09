@@ -2,6 +2,7 @@ class Hand
   attr_accessor :cards
 
   CARDS_LIMIT = 3
+  MAX_SCORE = 21
 
   def initialize
     @cards = []
@@ -11,7 +12,7 @@ class Hand
     sum ||= 0
     @cards.each do |card|
       if card.ace?
-        sum + card.point > 21 ? sum += 1 : sum += card.point
+        sum + card.point > MAX_SCORE ? sum += 1 : sum += card.point
       else
         sum += card.point
       end

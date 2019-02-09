@@ -1,5 +1,5 @@
 class GameInterface
-  INTRO = 'Игра \"Black Jack\"\n'
+  INTRO = 'Игра "Black Jack"'
   ENTER_NAME = 'Для начала введите свое имя'
   ANONIM = 'Аноним'
   DEALER = 'Крупье '
@@ -67,8 +67,7 @@ class GameInterface
     puts
   end
 
-  def bet(bank, user, dealer)
-    bank.bet(user, dealer)
+  def bet_info(bank)
     puts BETS + "#{bank.amount} $"
     puts
   end
@@ -78,16 +77,14 @@ class GameInterface
     input = select_choice(ACTIONS)
   end
 
-  def dealer_action(dealer)
-    if dealer.hand.score >= 17
-      puts DEALER_ACTIONS[0]
-      input = 0
-    else
-      puts DEALER_ACTIONS[1]
-      input = 1
-    end
+  def dealer_skips(dealer)
+    puts DEALER_ACTIONS[0]
     delay
-    input
+  end
+
+  def dealer_takes_card(dealer)
+    puts DEALER_ACTIONS[1]
+    delay
   end
 
   def get_player_continue

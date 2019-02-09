@@ -17,16 +17,18 @@ class Bank
     player.bank < BET
   end
 
-  def win(user)
-    user.get_prize(@amount)
-  end
-
-  def lose(dealer)
-    dealer.get_prize(@amount)
+  def reward_winner(player)
+    player.get_prize(@amount)
+    @amount = 0
   end
 
   def draw(user, dealer)
     dealer.get_prize(@amount / 2)
     user.get_prize(@amount / 2)
+    @amount = 0
+  end
+
+  def can_make_bet?(player)
+    player.bank >= BET
   end
 end

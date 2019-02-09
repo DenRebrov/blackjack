@@ -9,10 +9,6 @@ class Deck
     @cards.delete(card)
   end
 
-  def add_cards(cards)
-    @cards += cards
-  end
-
   private
 
   def create_deck

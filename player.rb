@@ -14,11 +14,9 @@ class Player
     @hand.cards << card
   end
 
-  def remove_cards
-    cards_for_deck = []
-    cards_for_deck += @hand.cards
+  def refresh_cards
     @hand.cards = []
-    cards_for_deck
+    @deck = Deck.new
   end
 
   def open_cards
