@@ -80,26 +80,20 @@ class GameController
   end
 
   def user_turn
-    unless @user.hand.full?
-      deal_cards(@user, 1)
-      @interface.user_cards(@user)
-
-      if @user.score > Hand::MAX_SCORE
-        @interface.lose_info
-        @status = :judge
-      end
-    end
+    return if @user.hand.full?
+    deal_cards(@user, 1)
+    @interface.user_cards(@user)
   end
 
   def dealer_turn
-    if @status != :judge
-      if @dealer.will_take_card?
-        @interface.dealer_takes_card(@dealer)
-        deal_cards(@dealer, 1)
-        @interface.dealer_cards(@dealer)
-      else
-        @interface.dealer_skips(@dealer)
-      end
+    return if @status == :judge
+
+    if @dealer.will_take_card?
+      @interface.dealer_takes_card(@dealer)
+      deal_cards(@dealer, 1)
+      @interface.dealer_cards(@dealer)
+    else
+      @interface.dealer_skips(@dealer)
     end
   end
 
@@ -116,10 +110,10 @@ class GameController
   def define_winner
     return if @user.score > Hand::MAX_SCORE && @dealer.score > Hand::MAX_SCORE
     return if @user.score == @dealer.score
-    return Dealer if @user.score > Hand::MAX_SCORE
-    return User if @dealer.score > Hand::MAX_SCORE
+    return @dealer if @user.score > Hand::MAX_SCORE
+    return @user if @dealer.score > Hand::MAX_SCORE
 
-    [@user, @dealer].max_by { |player| player.score }
+    [@user, @dealer].max_by(&:score)
   end
 
   def judge

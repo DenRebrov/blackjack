@@ -1,4 +1,5 @@
 class Card
+  ACE_CORRECTION = 10
   SUITS = %w[♠ ♥ ♣ ♦].freeze
   RANKS = {
     "2" => 2,
