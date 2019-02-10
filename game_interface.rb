@@ -74,7 +74,7 @@ class GameInterface
 
   def user_action
     puts YOUR_ACTIONS
-    input = select_choice(ACTIONS)
+    select_choice(ACTIONS)
   end
 
   def dealer_skips(dealer)
@@ -92,9 +92,8 @@ class GameInterface
     input = select_choice(USER_CHOICES)
   end
 
-  def open_cards_info(dealer)
+  def dealer_scores_info(dealer)
     puts DEALER_ACTIONS[2]
-    dealer.open_cards
     dealer_cards(dealer)
     delay
     puts DEALER_SCORES + "#{dealer.hand.score}"

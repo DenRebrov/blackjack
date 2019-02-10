@@ -23,6 +23,10 @@ class Player
     @hand.cards.each { |card| card.type = :open }
   end
 
+  def score
+    @hand.score
+  end
+
   def get_prize(amount)
     @bank += amount
   end

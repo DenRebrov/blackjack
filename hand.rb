@@ -10,11 +10,11 @@ class Hand
 
   def score
     sum ||= 0
+    @cards.each { |card| sum += card.point }
+
     @cards.each do |card|
-      if card.ace?
-        sum + card.point > MAX_SCORE ? sum += 1 : sum += card.point
-      else
-        sum += card.point
+      if sum > MAX_SCORE && card.ace?
+        sum -= 10
       end
     end
     sum

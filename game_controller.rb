@@ -32,8 +32,7 @@ class GameController
       end
 
       while (@status != :judge) do
-        user_turn
-        dealer_turn
+        game_round
       end
 
       play_again?
@@ -66,33 +65,40 @@ class GameController
     @bank.bet(@user, @dealer)
   end
 
-  def user_turn
+  def game_round
     input = @interface.user_action
 
     case input
+    when 1
+      dealer_turn
     when 2
-      unless @user.hand.full?
-        deal_cards(@user, 1)
-        @interface.user_cards(@user)
-        if @user.hand.score > Hand::MAX_SCORE
-          @interface.lose_info
-          @status = :judge
-        end
-      end
+      user_turn
+      dealer_turn
     when 3
-      @interface.open_cards_info(@dealer)
       judge
+    end
+  end
+
+  def user_turn
+    unless @user.hand.full?
+      deal_cards(@user, 1)
+      @interface.user_cards(@user)
+
+      if @user.score > Hand::MAX_SCORE
+        @interface.lose_info
+        @status = :judge
+      end
     end
   end
 
   def dealer_turn
     if @status != :judge
-      if @dealer.hand.score >= 17
-        @interface.dealer_skips(@dealer)
-      else
+      if @dealer.will_take_card?
         @interface.dealer_takes_card(@dealer)
         deal_cards(@dealer, 1)
         @interface.dealer_cards(@dealer)
+      else
+        @interface.dealer_skips(@dealer)
       end
     end
   end
@@ -108,17 +114,19 @@ class GameController
   end
 
   def define_winner
-    return if @user.hand.score > Hand::MAX_SCORE && @dealer.hand.score > Hand::MAX_SCORE
-    return if @user.hand.score == @dealer.hand.score
-    return Dealer if @user.hand.score > Hand::MAX_SCORE
-    return User if @dealer.hand.score > Hand::MAX_SCORE
+    return if @user.score > Hand::MAX_SCORE && @dealer.score > Hand::MAX_SCORE
+    return if @user.score == @dealer.score
+    return Dealer if @user.score > Hand::MAX_SCORE
+    return User if @dealer.score > Hand::MAX_SCORE
 
-    [@user, @dealer].max_by { |player| player.hand.score }
+    [@user, @dealer].max_by { |player| player.score }
   end
 
   def judge
     winner = define_winner
     @status = :judge
+    @dealer.open_cards
+    @interface.dealer_scores_info(@dealer)
     case winner
     when User
       @interface.win_info
